@@ -2,8 +2,7 @@
 //|                                                  tacEA-ID-lvl.mqh|
 //|                                               Copyright 2024, TAC|
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, TAC."
-#property link      "https://www.tac.com"
+#property copyright "Copyright 2024, KingAde, TAC."
 
 #include <ChartObjects/ChartObjectsTxtControls.mqh>
 

@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //|                                                   goldDigger.mq5 |
-//|                                      Copyright 2021, KingAde, TAC|
+//|                                      Copyright 2024, KingAde, TAC|
 //+------------------------------------------------------------------+
-#property copyright "2024, TAC"
-#property link      "#"
+#property copyright "Copyright 2024, KingAde, TAC."
+#property link      "https://twitter.com/Kingade_1"
 #property version   "1.00"
 #property strict
 
@@ -28,7 +28,6 @@ datetime lastSignalTime = 0;
 
 // Array to store candle stick data
 double sma4H[];
-double sma1M[];
 
 // Simple moving average handle
 int sma_handle4H = 0;
@@ -147,11 +146,6 @@ void OnTick()
      }
 
 // Simple moving averages
-   sma_handle1M = iMA(Symbol(), PERIOD_M1, SMA_Period, 0, MODE_SMA, PRICE_CLOSE);
-   if(CopyBuffer(sma_handle1M, 0, 0, 1, sma1M) <= 0)
-     {
-      Print("Erroe getting 1Min SMA data. Error code = ", GetLastError());
-     }
    sma_handle4H = iMA(Symbol(), PERIOD_H4, SMA_Period, 0, MODE_SMA, PRICE_CLOSE);
    if(CopyBuffer(sma_handle4H, 0, 0, 1, sma4H) <= 0)
      {
@@ -159,7 +153,6 @@ void OnTick()
       return;
      }
    currentH4SMA = sma4H[0];
-   current1MSMA = sma1M[0];
 
    if(signalCreated == 0) // Check if no signal has been created
      {
