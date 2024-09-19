@@ -28,6 +28,7 @@ datetime lastSignalTime = 0;
 
 // Array to store candle stick data
 double sma4H[];
+double sma1M[];
 
 // Simple moving average handle
 int sma_handle4H = 0;
@@ -38,7 +39,7 @@ double currentH4SMA = 0;
 double current1MSMA = 0;
 
 // Global lotsize variable
-input double lotsize = 0.01;
+input double lotsize = 0.02;
 
 // Input parameters
 input int SMA_Period = 14; // Period for SMA
@@ -128,8 +129,6 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   checkForBreakEven();
-   
 // Check if it's the right trading session
    if(!IsTradingSession(1))
       return;
@@ -214,7 +213,7 @@ void MonitorPriceAndOpenPosition(double lastTickPrice, bool isBullish)
          double slPoints = MathAbs(lastTickPrice - stopLoss);
          double tpPoints = slPoints * 4;
          double takeProfit = lastTickPrice + tpPoints;
-         
+
          int orderStatus = 0;
          orderStatus = openBuyOrder(takeProfit, stopLoss, lotsize);
          if(orderStatus == 1)
@@ -252,6 +251,4 @@ void MonitorPriceAndOpenPosition(double lastTickPrice, bool isBullish)
            }
         }
   }
-
-//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+

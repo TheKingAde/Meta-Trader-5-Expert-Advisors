@@ -1,10 +1,8 @@
 //+------------------------------------------------------------------+
-//|                                                       tacEA-ID-lvl.mqh |
-//|                                  Copyright 2024, TAC. |
-//|                                             https://www.tac.com |
+//|                                                  tacEA-ID-lvl.mqh|
+//|                                               Copyright 2024, TAC|
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, TAC."
-#property link      "https://www.tac.com"
+#property copyright "Copyright 2024, KingAde, TAC."
 
 #include <ChartObjects/ChartObjectsTxtControls.mqh>
 
@@ -12,7 +10,7 @@
 double currFibLevels[7]; // Declare array to store the current Fibonacci levels
 double prevFibLevels[7]; // Declare array to store the previous Fibonacci levels
 
-// Global variables to store level data
+// Global variables to store level prices and times
 double levelPrices[5];
 datetime levelTimes[5];
 
@@ -27,7 +25,7 @@ int zigzagHandle;
 
 
 //+------------------------------------------------------------------+
-//| Function to remove previous levels                                 |
+//| Function to remove previous levels                               |
 //+------------------------------------------------------------------+
 void removePreviousLevels()
   {
@@ -44,7 +42,7 @@ void removePreviousLevels()
   }
 
 //+------------------------------------------------------------------+
-//| Function to plot lines on the chart                                  |
+//| Function to plot lines on the chart                              |
 //+------------------------------------------------------------------+
 void PlotLines()
   {
@@ -60,7 +58,7 @@ void PlotLines()
   }
 
 //+------------------------------------------------------------------+
-//| Main function to identify levels                                   |
+//| Main function to identify levels                                  |
 //+------------------------------------------------------------------+
 void IdentifyLevels()
   {
@@ -107,9 +105,6 @@ void IdentifyLevels()
          countLevels++;
         }
      }
-
-// Plot initial levels
-   PlotLines();
   }
 
 //+------------------------------------------------------------------+
@@ -120,25 +115,25 @@ void CalculateFibonacciRetracement(double price1, double price2, double &levels[
    if(price1 < price2)
      {
       // Uptrend: Calculate levels from price1 (low) to price2 (high)
-      levels[0] = price1;                                  // 0%
-      levels[1] = price1 + 0.236 * (price2 - price1);       // 23.6%
-      levels[2] = price1 + 0.382 * (price2 - price1);       // 38.2%
+      levels[0] = price1;                                  // 100%
+      levels[1] = price1 + 0.236 * (price2 - price1);       // 76.4%
+      levels[2] = price1 + 0.382 * (price2 - price1);       // 61.8%
       levels[3] = price1 + 0.5 * (price2 - price1);         // 50%
-      levels[4] = price1 + 0.618 * (price2 - price1);       // 61.8%
-      levels[5] = price1 + 0.764 * (price2 - price1);       // 76.4%
-      levels[6] = price2;                                   // 100%
+      levels[4] = price1 + 0.618 * (price2 - price1);       // 38.2%
+      levels[5] = price1 + 0.764 * (price2 - price1);       // 23.6%
+      levels[6] = price2;                                   // 0%
      }
    else
       if(price1 > price2)
         {
          // Downtrend: Calculate levels from price1 (high) to price2 (low)
-         levels[0] = price1;                                  // 0%
-         levels[1] = price1 - 0.236 * (price1 - price2);       // 23.6%
-         levels[2] = price1 - 0.382 * (price1 - price2);       // 38.2%
+         levels[0] = price1;                                  // 100%
+         levels[1] = price1 - 0.236 * (price1 - price2);       // 76.4%
+         levels[2] = price1 - 0.382 * (price1 - price2);       // 61.8%
          levels[3] = price1 - 0.5 * (price1 - price2);         // 50%
-         levels[4] = price1 - 0.618 * (price1 - price2);       // 61.8%
-         levels[5] = price1 - 0.764 * (price1 - price2);       // 76.4%
-         levels[6] = price2;                                   // 100%
+         levels[4] = price1 - 0.618 * (price1 - price2);       // 38.2%
+         levels[5] = price1 - 0.764 * (price1 - price2);       // 23.6%
+         levels[6] = price2;                                   // 0%
         }
   }
 
@@ -173,21 +168,21 @@ void DrawCurrFibonacciRetracement(double price1, double price2, double &fibLevel
    ObjectSetInteger(0, "CurrFiboRetracement", OBJPROP_STYLE, STYLE_SOLID); // Set line style
 
 //Create and set horizontal lines for each Fibonacci level
-//   for(int i = 0; i < 7; i++)  // Updated to loop 7 times for 7 levels
-//     {
-//      string lineName = "CurrFiboLevel_" + IntegerToString(i);
-//      ObjectDelete(0, lineName); // Delete any existing lines with the same name
-//
-//      if(!ObjectCreate(0, lineName, OBJ_HLINE, 0, 0, fibLevels[i]))
-//        {
-//         Print("Error creating horizontal line for level ", i, ": ", GetLastError());
-//         return;
-//        }
-//
-//      //Set properties for the horizontal lines
-//      ObjectSetInteger(0, lineName, OBJPROP_COLOR, clrYellow);  // Set line color
-//      ObjectSetInteger(0, lineName, OBJPROP_WIDTH, 2);       // Set line width
-//     }
+   for(int i = 0; i < 7; i++)  // Updated to loop 7 times for 7 levels
+     {
+      string lineName = "CurrFiboLevel_" + IntegerToString(i);
+      ObjectDelete(0, lineName); // Delete any existing lines with the same name
+
+      if(!ObjectCreate(0, lineName, OBJ_HLINE, 0, 0, fibLevels[i]))
+        {
+         Print("Error creating horizontal line for level ", i, ": ", GetLastError());
+         return;
+        }
+
+      //Set properties for the horizontal lines
+      ObjectSetInteger(0, lineName, OBJPROP_COLOR, clrYellow);  // Set line color
+      ObjectSetInteger(0, lineName, OBJPROP_WIDTH, 2);       // Set line width
+     }
 
 // Redraw the chart to show the updated Fibonacci levels
    ChartRedraw();
@@ -244,6 +239,4 @@ void DrawPrevFibonacciRetracement(double price1, double price2, double &fibLevel
 // Redraw the chart to show the updated Fibonacci levels
    ChartRedraw();
   }
-
-
 //+------------------------------------------------------------------+
