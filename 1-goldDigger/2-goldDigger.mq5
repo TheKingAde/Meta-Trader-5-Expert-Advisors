@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2024, KingAde, TAC."
 #property link      "https://twitter.com/Kingade_1"
-#property description "Main with 0.4 sl with 1hr signal limit"
+#property description "Main with 0.4 sl without 1hr signal limit"
 #property version   "1.00"
 #property strict
 
@@ -35,7 +35,6 @@ double ExtLastRetracement = 0;
 double ExtCurrentH4SMA = 0; // Store current sma value
 double ExtIniaccountBalance = 0;
 double ExtDrawDownAmount = 0;
-datetime ExtLastSignalTime = 0; // Track if a signal has been generated and time of creation
 datetime ExtLevelTimes[5]; // Store level times
 ENUM_TIMEFRAMES period = _Period;
 // Input parameters
@@ -43,7 +42,6 @@ input double inpLotsize = 0.02; // Lotsize variable
 input int inpSMA_Period = 14; // Period for SMA
 input int inpDrawDownPercent = 30;
 input int inpPercentageRisk = 2;
-input int inpcurrencyTicks = 10;
 
 CTrade EXTrade; // library for handling trades
 
@@ -146,13 +144,6 @@ void OnTick()
 // Check if it's the right trading session
    if(!IsTradingSession(1))
       return;
-// Check if 1hr have passed since the last signal
-   if((TimeCurrent() - ExtLastSignalTime) > 3600)
-     {
-      ExtSignalCreated = SIGNAL_NOT;
-      ExtLastRetracement = 0;
-      ExtLastSignalTime = 0;
-     }
 // Get the current tick data
    if(!SymbolInfoTick(Symbol(), ExtLast_tick))
      {
@@ -202,7 +193,6 @@ void OnTick()
             Print("[=======================================================]");
             ExtLastRetracement = ExtLevelPrices[1];
             ExtSellSignalCount++;
-            ExtLastSignalTime = TimeCurrent();
            }
         }
       else
@@ -224,7 +214,6 @@ void OnTick()
                Print("[======================================================]");
                ExtLastRetracement = ExtLevelPrices[1];
                ExtBuySignalCount++;
-               ExtLastSignalTime = TimeCurrent();
               }
            }
      }
@@ -543,7 +532,7 @@ bool handlePortfolio(double riskPercent, double stopLossPoints)
    double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
    double requiredMargin = 0;
 // 1 pip = 10 ticks
-   double pipValue = tickValue * inpcurrencyTicks;
+   double pipValue = tickValue * 10;
 // Calculate the risk amount in currency
    double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
    Print("[=======================]");

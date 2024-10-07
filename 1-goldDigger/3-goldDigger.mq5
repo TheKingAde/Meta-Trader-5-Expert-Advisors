@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2024, KingAde, TAC."
 #property link      "https://twitter.com/Kingade_1"
-#property description "Main with 0.4 sl with 1hr signal limit"
+#property description "Main with 0.5 sl with 1hr signal limit"
 #property version   "1.00"
 #property strict
 
@@ -42,8 +42,7 @@ ENUM_TIMEFRAMES period = _Period;
 input double inpLotsize = 0.02; // Lotsize variable
 input int inpSMA_Period = 14; // Period for SMA
 input int inpDrawDownPercent = 30;
-input int inpPercentageRisk = 2;
-input int inpcurrencyTicks = 10;
+input int inpPercentageRisk = 3;
 
 CTrade EXTrade; // library for handling trades
 
@@ -289,7 +288,7 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
             double stopLoss = calculateExit(ExtLevelPrices[2],
                                             ExtLevelPrices[1],
                                             lastTickPrice,
-                                            0.40,
+                                            0.50,
                                             true);
             double takeProfit = calculateExit(ExtLevelPrices[3],
                                               ExtLevelPrices[4],
@@ -298,10 +297,10 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                                               false);
             double slPoints = MathAbs(lastTickPrice - stopLoss);
             double tpPoints = MathAbs(lastTickPrice - takeProfit);
-            double tp = lastTickPrice + (slPoints * 4);
+            double tp = lastTickPrice + (slPoints * 3);
             double RR = tpPoints/slPoints;
             int orderStatus = 0;
-            if(RR >= 4)
+            if(RR >= 3)
               {
                if(handlePortfolio(inpPercentageRisk,
                                   slPoints) == false)
@@ -397,7 +396,7 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                double stopLoss = calculateExit(ExtLevelPrices[2],
                                                ExtLevelPrices[1],
                                                lastTickPrice,
-                                               0.40,
+                                               0.50,
                                                false);
                double takeProfit = calculateExit(ExtLevelPrices[3],
                                                  ExtLevelPrices[4],
@@ -406,10 +405,10 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                                                  true);
                double slPoints = MathAbs(lastTickPrice - stopLoss);
                double tpPoints = MathAbs(lastTickPrice - takeProfit);
-               double tp = lastTickPrice - (slPoints * 4);
+               double tp = lastTickPrice - (slPoints * 3);
                double RR = tpPoints/slPoints;
                int orderStatus = 0;
-               if(RR >= 4)
+               if(RR >= 3)
                  {
                   if(handlePortfolio(inpPercentageRisk,
                                      slPoints) == false)
@@ -543,7 +542,7 @@ bool handlePortfolio(double riskPercent, double stopLossPoints)
    double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
    double requiredMargin = 0;
 // 1 pip = 10 ticks
-   double pipValue = tickValue * inpcurrencyTicks;
+   double pipValue = tickValue * 10;
 // Calculate the risk amount in currency
    double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
    Print("[=======================]");
