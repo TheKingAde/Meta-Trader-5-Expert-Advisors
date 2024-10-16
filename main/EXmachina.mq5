@@ -14,14 +14,14 @@
 #define SIGNAL_NOT    0             // No trading signal
 #define SIGNAL_SELL  -1             // Sell signal
 
-double ExtDrawDownAmount = 0;      // Drawdown amount based on percentage
-input int      inpDrawDownPercent = 30;         // Default drawdown percentage
-input int inppercentageRisk = 3; // Percentage risk per trade
+double ExtDrawDownAmount = 0;                                // Drawdown amount based on percentage
+input int      inpDrawDownPercent = 30;                      // Default drawdown percentage
+input int inppercentageRisk = 3;                             // Percentage risk per trade
 input string symbolsToTrade = "XAUUSD,GBPUSD,USDJPY,AUDUSD"; // Comma-separated list of symbols
-input string tick = "10,1,1,1"; // Corresponding tick sizes for each symbol
-input double inplotSize = 0.02; // Lot size
-int ExtBuySignalCount = 0;    // Buy signal count
-int ExtSellSignalCount = 0;;   // Sell signal count
+input string tick = "10,1,1,1";                              // Corresponding tick sizes for each symbol
+input double inplotSize = 0.02;                              // Lot size
+int ExtBuySignalCount = 0;                                   // Buy signal count
+int ExtSellSignalCount = 0;;                                 // Sell signal count
 
 //+------------------------------------------------------------------+
 //| Expert Trader class                                              |
@@ -47,12 +47,12 @@ private:
    double            ExtIniaccountBalance;
    datetime          ExtLastSignalTime;    // Last signal time
    datetime          ExtLevelTimes[5];     // Level times array
-   ENUM_TIMEFRAMES   period;              // Timeframe for analysis
+   ENUM_TIMEFRAMES   period;               // Timeframe for analysis
 
    // Input parameters
    double            inpLotsize;             // Lotsize
    int               inpSMA_Period;          // Period for SMA
-   long               inpcurrencyTicks;       // Currency ticks
+   long              inpcurrencyTicks;       // Currency ticks
    int               inpPercentageRisk;      // Risk percentage
 
 public:
@@ -69,11 +69,11 @@ public:
       ExtIniaccountBalance = 0;
       ExtDrawDownAmount = 0;
       ExtLastSignalTime = 0;
-      period = _Period; // Set default timeframe
+      period = _Period;                       // Set default timeframe
 
-      inpLotsize = lotsize;               // Default lot size
-      inpSMA_Period = 14;              // Default SMA period
-      inpPercentageRisk = percentageRisk;           // Default risk percentage         // Default currency ticks
+      inpLotsize = lotsize;                   // Default lot size
+      inpSMA_Period = 14;                     // Default SMA period
+      inpPercentageRisk = percentageRisk;     // Default risk percentage
      }
 
    // Setter for initial account balance
@@ -87,11 +87,11 @@ public:
    void              IdentifyLevels()
      {
       // Subtract 2 days in seconds from the current time
-      datetime fromTime = TimeLocal() - 2 * 24 * 60 * 60;
-      datetime toTime = TimeLocal(); // Current local time
+      datetime fromTime = TimeCurrent() - 2 * 24 * 60 * 60;
+      datetime toTime = TimeCurrent(); // Current local time
 
       // Retrieve data for the specific symbol
-      ExtCopiedData = CopyRates(symbol, PERIOD_M1, fromTime, toTime, ExtChartData);
+      ExtCopiedData = CopyRates(symbol, period, fromTime, toTime, ExtChartData);
       if(ExtCopiedData <= 0)
         {
          // Print("[ Failed to retrieve data for symbol: ", symbol, " ]");
@@ -284,7 +284,7 @@ public:
             ExtLastRetracement = 0;
             return;
            }
-         if(ExtLastRetracement == ExtLevelPrices[4]) // // Second retracement after signal
+         if(ExtLastRetracement == ExtLevelPrices[4]) // Second retracement after signal
            {
             if(lastTickPrice <= ExtCurrFibLevels[2]) // 61.8 Retracement level
               {
@@ -451,9 +451,7 @@ public:
       double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
       double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
       double requiredMargin = 0;
-      // 1 pip = 10 ticks
       double pipValue = tickValue * inpcurrencyTicks;
-      // Calculate the risk amount in currency
       double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
       Print("[ ", symbol,"Risk Amount: ", riskAmount, " ]");
       if(riskAmount > maxRisk)
@@ -488,14 +486,11 @@ public:
       TimeToStruct(currentTime, timeStruct);
       int hour = timeStruct.hour;
       int minute = timeStruct.min;
-      // Asian session: 00:00 AM - 09:00 AM
-      bool isAsianSession = (hour >= 2 && hour < 9); // 2 hr after asian session begins
-      // London session: 8:00 AM - 5:00 PM
+      bool isAsianSession = (hour >= 2 && hour < 9);                        // Asian session: 00:00 AM - 09:00 AM. 2 hr after asian session begins.
       bool isLondonSession = (hour > 8 || (hour == 8 && minute >= 0))
-                             && (hour < 17 || (hour == 17 && minute == 0));
-      // New York session: 1:00 PM - 10:00 PM
+                             && (hour < 17 || (hour == 17 && minute == 0)); // London session: 8:00 AM - 5:00 PM
       bool isNYSession = (hour > 13 || (hour == 13 && minute >= 0))
-                         && (hour < 22 || (hour == 22 && minute == 0));
+                         && (hour < 22 || (hour == 22 && minute == 0));     // New York session: 1:00 PM - 10:00 PM
       bool isLateNySession = (hour > 21 || (hour == 21 && minute >= 0))
                              && (hour < 23 || (hour == 23 && minute == 40));
       // Trading is allowed only during specified session(s)
@@ -583,10 +578,9 @@ void OnInit()
   {
    Print("[ INITIALIZING EXmachina ]");
 
-// Calculate initial account balance and drawdown once globally
    double ExtIniaccountBalance = AccountInfoDouble(ACCOUNT_BALANCE); // Get initial account balance
    Print(ExtIniaccountBalance);
-   ExtDrawDownAmount = (inpDrawDownPercent / 100.0) * ExtIniaccountBalance;
+   ExtDrawDownAmount = (inpDrawDownPercent / 100.0) * ExtIniaccountBalance; // Calculate drawdown once globally
 
 // Parse symbols from the input string
    string symbolsArray[];
@@ -609,7 +603,6 @@ void OnInit()
       ); // Use getter to provide actual prices
      }
 
-// Further initialization if needed...
    EventSetTimer(15); // Set timer to call OnTimer every 15 seconds
   }
 
