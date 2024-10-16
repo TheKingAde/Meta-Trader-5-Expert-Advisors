@@ -9,7 +9,6 @@
 #property strict
 
 #include <Trade\Trade.mqh>
-#include <ChartObjects/ChartObjectsTxtControls.mqh>
 
 #define SIGNAL_BUY    1             // Buy signal
 #define SIGNAL_NOT    0             // No trading signal
@@ -183,7 +182,7 @@ public:
          ExtLastSignalTime = 0;
         }
       // Get the current tick data
-      if(!SymbolInfoTick(Symbol(), ExtLast_tick))
+      if(!SymbolInfoTick(symbol, ExtLast_tick))
         {
          Print("[===============================================]");
          Print(symbol,"  Error in SymbolInfoTick. Error code = ", GetLastError());
@@ -191,7 +190,7 @@ public:
          return;
         }
       // Simple moving averages
-      ExtSma_handle4H = iMA(Symbol(),
+      ExtSma_handle4H = iMA(symbol,
                             PERIOD_H4,
                             inpSMA_Period,
                             0,
@@ -584,7 +583,7 @@ public:
      {
       // Open the buy trade
       ulong buyTicket = EXTrade.Buy(lotSize,
-                                    Symbol(),
+                                    symbol,
                                     0,
                                     stopLoss,
                                     takeProfit,
@@ -609,7 +608,7 @@ public:
      {
       // Open the sell trade
       ulong sellTicket = EXTrade.Sell(lotSize,
-                                      Symbol(),
+                                      symbol,
                                       0,
                                       stopLoss,
                                       takeProfit,
