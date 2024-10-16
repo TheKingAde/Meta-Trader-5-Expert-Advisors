@@ -20,6 +20,8 @@ input int inppercentageRisk = 3; // Percentage risk per trade
 input string symbolsToTrade = "XAUUSD,GBPUSD,USDJPY,AUDUSD"; // Comma-separated list of symbols
 input string tick = "10,1,1,1"; // Corresponding tick sizes for each symbol
 input double inplotSize = 0.02; // Lot size
+int ExtBuySignalCount = 0;    // Buy signal count
+int ExtSellSignalCount = 0;;   // Sell signal count
 
 //+------------------------------------------------------------------+
 //| Expert Trader class                                              |
@@ -35,8 +37,6 @@ private:
    int               ExtCopiedData;        // Data copied
    int               ExtCountLevels;       // Variable to count levels
    int               ExtZigzagHandle;      // Handle for Zigzag indicator
-   int               ExtBuySignalCount;    // Buy signal count
-   int               ExtSellSignalCount;   // Sell signal count
    int               ExtSma_handle4H;      // Handle for SMA
    double            ExtCurrFibLevels[7];  // Current Fibonacci levels
    double            ExtLevelPrices[5];    // Level prices
@@ -64,8 +64,6 @@ public:
       ExtSignalCreated = SIGNAL_NOT;
       ExtCopiedData = 0;
       ExtCountLevels = 0;
-      ExtBuySignalCount = 0;
-      ExtSellSignalCount = 0;
       ExtLastRetracement = 0;
       ExtCurrentH4SMA = 0;
       ExtIniaccountBalance = 0;
@@ -432,7 +430,7 @@ public:
             sl = entryPrice + slPoints;
       return sl;
      }
-   //  Method to find the index of a value in an array                 
+   //  Method to find the index of a value in an array
    int               findMatchIdx(double value,
                                   double &array[])
      {
@@ -529,7 +527,7 @@ public:
                  }
       return false;
      }
-   // Method to open buy order                                         
+   // Method to open buy order
    int               openBuyOrder(double takeProfit, double stopLoss, double lotSize)
      {
       // Open the buy trade
@@ -546,7 +544,7 @@ public:
         }
       return 1;
      }
-   // Method to open sell order                                        
+   // Method to open sell order
    int               openSellOrder(double takeProfit, double stopLoss, double lotSize)
      {
       // Open the sell trade
@@ -649,6 +647,44 @@ void OnDeinit(const int reason)
      {
       Print("[ MINIMUM DRAWDOWN AMOUNT EXCEEDED, DEINITIALIZING... ]");
      }
+
+   int totalSG = ExtBuySignalCount + ExtSellSignalCount;
+
+   Print("[ Total Signals Generated: ", totalSG, " ]");
+   Print("[ Total Buy Signals Generated: ", ExtBuySignalCount, " ]");
+   Print("[ Total Sell Signals Generated: ", ExtSellSignalCount, " ]");
+// Select the history of deals within the range from the start of the strategy to the current time
+   if(!HistorySelect(0, TimeCurrent()))
+     {
+      Print("[ Error in HistorySelect: ", GetLastError(), " ]");
+      return;
+     }
+// Counters for winning and losing trades
+   int winningTradesCount = 0;
+   int winningTrades = 0;
+   int losingTrades = 0;
+   ulong ticket = 0;
+   double profit = 0;
+// Iterate through the trade history
+   for(int i = 0; i < HistoryDealsTotal(); i++)
+     {
+      ulong ticket = HistoryDealGetTicket(i);
+      double profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+
+      if(profit > 0)
+        {
+         winningTradesCount++;
+        }
+      else
+         if(profit < 0)
+           {
+            losingTrades++;
+           }
+     }
+   winningTrades = winningTradesCount - 1;
+// Print the results for winning and losing trades
+   Print("[ Total Winning Trades: ", winningTrades, " ]");
+   Print("[ Total Losing Trades: ", losingTrades,  " ]");
    EventKillTimer();
   }
 
