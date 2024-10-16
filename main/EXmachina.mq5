@@ -37,8 +37,6 @@ private:
    int               ExtZigzagHandle;      // Handle for Zigzag indicator
    int               ExtBuySignalCount;    // Buy signal count
    int               ExtSellSignalCount;   // Sell signal count
-   int               ExtBuyTradeCount;     // Buy trade count
-   int               ExtSellTradeCount;    // Sell trade count
    int               ExtSma_handle4H;      // Handle for SMA
    double            ExtCurrFibLevels[7];  // Current Fibonacci levels
    double            ExtLevelPrices[5];    // Level prices
@@ -68,8 +66,6 @@ public:
       ExtCountLevels = 0;
       ExtBuySignalCount = 0;
       ExtSellSignalCount = 0;
-      ExtBuyTradeCount = 0;
-      ExtSellTradeCount = 0;
       ExtLastRetracement = 0;
       ExtCurrentH4SMA = 0;
       ExtIniaccountBalance = 0;
@@ -219,11 +215,11 @@ public:
                && ExtLast_tick.ask < ExtCurrentH4SMA)
               {
                ExtSignalCreated = SIGNAL_SELL; // Sell signal created
-               datetime expiryTime = TimeCurrent() + 3600;
+               ExtLastSignalTime = TimeCurrent();
+               datetime expiryTime = ExtLastSignalTime + 3600;
                Print("[ ", symbol," Sell signal created, expiry time: ", expiryTime, " ]");
                ExtLastRetracement = ExtLevelPrices[1];
                ExtSellSignalCount++;
-               ExtLastSignalTime = TimeCurrent();
               }
            }
          else
@@ -238,11 +234,11 @@ public:
                   && ExtLast_tick.bid > ExtCurrentH4SMA)
                  {
                   ExtSignalCreated = SIGNAL_BUY; // Buy signal created
-                  datetime expiryTime = TimeCurrent() + 3600;
+                  ExtLastSignalTime = TimeCurrent();
+                  datetime expiryTime = ExtLastSignalTime + 3600;
                   Print("[ ", symbol," Buy signal created, expiry time: ", expiryTime, " ]");
                   ExtLastRetracement = ExtLevelPrices[1];
                   ExtBuySignalCount++;
-                  ExtLastSignalTime = TimeCurrent();
                  }
               }
         }
@@ -357,7 +353,7 @@ public:
            {
             if(findMatchIdx(ExtLastRetracement,
                             ExtLevelPrices) == -1)
-              { 
+              {
                Print("[ ", symbol," Missed Entry ]");
                ExtSignalCreated = SIGNAL_NOT;
                ExtLastRetracement = 0;
@@ -524,19 +520,26 @@ public:
             || isAsianSession
             || isLateNySession
             || isLondonSession)
-           {
             return true;
-           }
         }
       else
          if(type == 2)
            {
-            if(isLondonSession
-               || isNYSession)
-              {
+            if(isLondonSession)
                return true;
-              }
            }
+         else
+            if(type == 3)
+              {
+               if(isNYSession || isLateNySession)
+                  return true;
+              }
+            else
+               if(type == 4)
+                 {
+                  if(isAsianSession)
+                     return true;
+                 }
       return false;
      }
    //+------------------------------------------------------------------+
@@ -551,11 +554,7 @@ public:
                                     stopLoss,
                                     takeProfit,
                                     "Buy Order");
-      if(buyTicket > 0)
-        {
-         ExtBuyTradeCount++;
-        }
-      else
+      if(buyTicket < 0)
         {
          Print("[ ", symbol,"  FAILED TO OPEN BUY ORDER. ERROR CODE: ", EXTrade.ResultRetcode(), " ]");
          return 0;
@@ -574,11 +573,7 @@ public:
                                       stopLoss,
                                       takeProfit,
                                       "Sell Order");
-      if(sellTicket > 0)
-        {
-         ExtSellTradeCount++;
-        }
-      else
+      if(sellTicket < 0)
         {
          Print("[ ", symbol,"  FAILED TO OPEN SELL ORDER. ERROR CODE: ", EXTrade.ResultRetcode(), " ]");
          return 0;
@@ -597,7 +592,7 @@ public:
 
    // Additional methods for trade management, etc.
   };
-  
+
 // Global variables for managing multiple symbols
 CSymbolTrader *traders[]; // Array to hold symbol traders
 //+------------------------------------------------------------------+
