@@ -17,8 +17,8 @@
 double ExtDrawDownAmount = 0;      // Drawdown amount based on percentage
 input int      inpDrawDownPercent = 30;         // Default drawdown percentage
 input int inppercentageRisk = 3; // Percentage risk per trade
-input string symbolsToTrade = "XAUUSD,GBPUSD"; // Comma-separated list of symbols
-input string tick = "10,1"; // Corresponding tick sizes for each symbol
+input string symbolsToTrade = "XAUUSD,GBPUSD,USDJPY,AUDUSD"; // Comma-separated list of symbols
+input string tick = "10,1,1,1"; // Corresponding tick sizes for each symbol
 input double inplotSize = 0.02; // Lot size
 
 //+------------------------------------------------------------------+
@@ -175,12 +175,12 @@ public:
       if(!IsTradingSession(1))
          return;
       // Check if 1hr have passed since the last signal
-      if((TimeCurrent() - ExtLastSignalTime) > 3600)
-        {
-         ExtSignalCreated = SIGNAL_NOT;
-         ExtLastRetracement = 0;
-         ExtLastSignalTime = 0;
-        }
+      //if((TimeCurrent() - ExtLastSignalTime) > 3600)
+      //  {
+      //   ExtSignalCreated = SIGNAL_NOT;
+      //   ExtLastRetracement = 0;
+      //   ExtLastSignalTime = 0;
+      //  }
       // Get the current tick data
       if(!SymbolInfoTick(symbol, ExtLast_tick))
         {
@@ -326,7 +326,7 @@ public:
                                                  false);
                double slPoints = MathAbs(lastTickPrice - stopLoss);
                double tpPoints = MathAbs(lastTickPrice - takeProfit);
-               //double tp = lastTickPrice + (slPoints * 3);
+               double tp = lastTickPrice + (slPoints * 3);
                double RR = tpPoints/slPoints;
                int orderStatus = 0;
                if(RR >= 3)
@@ -338,16 +338,16 @@ public:
                      ExtLastRetracement = 0;
                      return;
                     }
-                  orderStatus = openBuyOrder(takeProfit,
+                  orderStatus = openBuyOrder(tp,
                                              stopLoss,
                                              inpLotsize);
                   if(orderStatus == 1)
                     {
-                     double tp = lastTickPrice - tpPoints;
-                     double sl = lastTickPrice + slPoints;
+                     // double tp = lastTickPrice - tpPoints;
+                     // double sl = lastTickPrice + slPoints;
 
-                     orderStatus = openSellOrder(tp,
-                                                sl,
+                     orderStatus = openBuyOrder(takeProfit,
+                                                stopLoss,
                                                 inpLotsize);
                      ExtSignalCreated = SIGNAL_NOT;
                      ExtLastRetracement = 0;
@@ -413,16 +413,16 @@ public:
                         ExtLastRetracement = 0;
                         return;
                        }
-                     orderStatus = openSellOrder(takeProfit,
+                     orderStatus = openSellOrder(tp,
                                                  stopLoss,
                                                  inpLotsize);
                      if(orderStatus == 1)
                        {
-                        double tp = lastTickPrice + tpPoints;
-                        double sl = lastTickPrice - slPoints;
+                        //double tp = lastTickPrice + tpPoints;
+                        //double sl = lastTickPrice - slPoints;
                         
-                        orderStatus = openBuyOrder(tp,
-                                                    sl,
+                        orderStatus = openSellOrder(takeProfit,
+                                                    stopLoss,
                                                     inpLotsize);
                         ExtSignalCreated = SIGNAL_NOT;
                         ExtLastRetracement = 0;
