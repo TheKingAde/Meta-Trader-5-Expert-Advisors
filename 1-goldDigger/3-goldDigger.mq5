@@ -43,6 +43,7 @@ input double inpLotsize = 0.02; // Lotsize variable
 input int inpSMA_Period = 14; // Period for SMA
 input int inpDrawDownPercent = 30;
 input int inpPercentageRisk = 3;
+input int inpcurrencyTicks = 10;
 
 CTrade EXTrade; // library for handling trades
 
@@ -322,47 +323,11 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                  }
                else
                  {
-                  Sleep(3000);
-                  Print("[==========]");
-                  Print("  Retrying");
-                  Print("[==========]");
-                  orderStatus = openBuyOrder(takeProfit,
-                                             stopLoss,
-                                             inpLotsize);
-                  if(orderStatus == 1)
-                    {
-                     orderStatus = openBuyOrder(tp,
-                                                stopLoss,
-                                                inpLotsize);
-                     ExtSignalCreated = SIGNAL_NOT;
-                     ExtLastRetracement = 0;
-                    }
-                  else
-                    {
-                     Sleep(3000);
-                     Print("[==========]");
-                     Print("  Retrying");
-                     Print("[==========]");
-                     orderStatus = openBuyOrder(takeProfit,
-                                                stopLoss,
-                                                inpLotsize);
-                     if(orderStatus == 1)
-                       {
-                        orderStatus = openBuyOrder(tp,
-                                                   stopLoss,
-                                                   inpLotsize);
-                        ExtSignalCreated = SIGNAL_NOT;
-                        ExtLastRetracement = 0;
-                       }
-                     else
-                       {
-                        Print("[===========]");
-                        Print("  Resetting");
-                        Print("[===========]");
-                        ExtSignalCreated = SIGNAL_NOT;
-                        ExtLastRetracement = 0;
-                       }
-                    }
+                  Print("[=================================]");
+                  Print("  Failed to open order resetting");
+                  Print("[=================================]");
+                  ExtSignalCreated = SIGNAL_NOT;
+                  ExtLastRetracement = 0;
                  }
               }
             else
@@ -430,57 +395,21 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                     }
                   else
                     {
-                     Sleep(5000);
-                     Print("[==========]");
-                     Print("  Retrying");
-                     Print("[==========]");
-                     orderStatus = openSellOrder(takeProfit,
-                                                 stopLoss,
-                                                 inpLotsize);
-                     if(orderStatus == 1)
-                       {
-                        orderStatus = openSellOrder(tp,
-                                                    stopLoss,
-                                                    inpLotsize);
-                        ExtSignalCreated = SIGNAL_NOT;
-                        ExtLastRetracement = 0;
-                       }
-                     else
-                       {
-                        Sleep(5000);
-                        Print("[==========]");
-                        Print("  Retrying");
-                        Print("[==========]");
-                        orderStatus = openSellOrder(takeProfit,
-                                                    stopLoss,
-                                                    inpLotsize);
-                        if(orderStatus == 1)
-                          {
-                           orderStatus = openSellOrder(tp,
-                                                       stopLoss,
-                                                       inpLotsize);
-                           ExtSignalCreated = SIGNAL_NOT;
-                           ExtLastRetracement = 0;
-                          }
-                        else
-                          {
-                           Print("[===========]");
-                           Print("  Resetting");
-                           Print("[===========]");
-                           ExtSignalCreated = SIGNAL_NOT;
-                           ExtLastRetracement = 0;
-                          }
-                       }
+                     Print("[=================================]");
+                     Print("  Failed to open order resetting");
+                     Print("[=================================]");
+                     ExtSignalCreated = SIGNAL_NOT;
+                     ExtLastRetracement = 0;
                     }
                  }
-               else
-                 {
-                  Print("[=====================================]");
-                  Print("  Signal doesn't meet R:R requirement");
-                  Print("[=====================================]");
-                  ExtSignalCreated = SIGNAL_NOT;
-                  ExtLastRetracement = 0;
-                 }
+              }
+            else
+              {
+               Print("[=====================================]");
+               Print("  Signal doesn't meet R:R requirement");
+               Print("[=====================================]");
+               ExtSignalCreated = SIGNAL_NOT;
+               ExtLastRetracement = 0;
               }
            }
         }
@@ -520,16 +449,7 @@ int findMatchIdx(double value,
      }
    return -1;
   }
-//+------------------------------------------------------------------+
-//| Expert Function to check if price is lower than drawdown amount  |
-//+------------------------------------------------------------------+
-bool checkDrawDown()
-  {
-   double currAccountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
-   if(currAccountBalance < ExtDrawDownAmount)
-      return true;
-   return false;
-  }
+
 //+------------------------------------------------------------------+
 //|  Expert Function  to handle portfolio/risk                       |
 //+------------------------------------------------------------------+
@@ -542,7 +462,7 @@ bool handlePortfolio(double riskPercent, double stopLossPoints)
    double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
    double requiredMargin = 0;
 // 1 pip = 10 ticks
-   double pipValue = tickValue * 10;
+   double pipValue = tickValue * inpcurrencyTicks;
 // Calculate the risk amount in currency
    double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
    Print("[=======================]");
@@ -765,4 +685,13 @@ void CalculateFibonacciRetracement(double price1,
         }
   }
 //+------------------------------------------------------------------+
+//| Expert Function to check if price is lower than drawdown amount  |
+//+------------------------------------------------------------------+
+bool checkDrawDown()
+  {
+   double currAccountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   if(currAccountBalance < ExtDrawDownAmount)
+      return true;
+   return false;
+  }
 //+------------------------------------------------------------------+

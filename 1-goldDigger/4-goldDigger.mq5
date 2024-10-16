@@ -290,10 +290,10 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                                               false);
             double slPoints = MathAbs(lastTickPrice - stopLoss);
             double tpPoints = MathAbs(lastTickPrice - takeProfit);
-            double tp = lastTickPrice + (slPoints * 4);
+            double tp = lastTickPrice + (slPoints * 3);
             double RR = tpPoints/slPoints;
             int orderStatus = 0;
-            if(RR >= 4)
+            if(RR >= 3)
               {
                if(handlePortfolio(inpPercentageRisk,
                                   slPoints) == false)
@@ -398,10 +398,10 @@ void MonitorPriceAndOpenPosition(double lastTickPrice,
                                                  true);
                double slPoints = MathAbs(lastTickPrice - stopLoss);
                double tpPoints = MathAbs(lastTickPrice - takeProfit);
-               double tp = lastTickPrice - (slPoints * 4);
+               double tp = lastTickPrice - (slPoints * 3);
                double RR = tpPoints/slPoints;
                int orderStatus = 0;
-               if(RR >= 4)
+               if(RR >= 3)
                  {
                   if(handlePortfolio(inpPercentageRisk,
                                      slPoints) == false)

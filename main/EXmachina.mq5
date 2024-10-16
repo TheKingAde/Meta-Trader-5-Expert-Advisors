@@ -100,7 +100,7 @@ public:
       ExtCopiedData = CopyRates(symbol, PERIOD_M1, fromTime, toTime, ExtChartData);
       if(ExtCopiedData <= 0)
         {
-         // Print("Failed to retrieve data for symbol: ", symbol);
+         // Print("[ Failed to retrieve data for symbol: ", symbol, " ]");
          return;
         }
       ArraySetAsSeries(ExtChartData, true);
@@ -113,7 +113,7 @@ public:
 
       if(ExtZigzagHandle == INVALID_HANDLE)
         {
-         //Print("Failed to apply ZigZag on symbol: ", symbol);
+         //Print("[ Failed to apply ZigZag on symbol: ", symbol, " ]");
          return;
         }
 
@@ -121,7 +121,7 @@ public:
       int copiedZigzagData = CopyBuffer(ExtZigzagHandle, 0, 0, ExtCopiedData, ExtZigzagData);
       if(copiedZigzagData <= 0)
         {
-         //Print("Failed to copy ZigZag buffer for symbol: ", symbol);
+         //Print("[ Failed to copy ZigZag buffer for symbol: ", symbol, " ]");
          return;
         }
       ArraySetAsSeries(ExtZigzagData, true);
@@ -184,9 +184,7 @@ public:
       // Get the current tick data
       if(!SymbolInfoTick(symbol, ExtLast_tick))
         {
-         Print("[===============================================]");
-         Print(symbol,"  Error in SymbolInfoTick. Error code = ", GetLastError());
-         Print("[===============================================]");
+         Print("[ ", symbol,"  Error in SymbolInfoTick. Error code = ", GetLastError(), " ]");
          return;
         }
       // Simple moving averages
@@ -202,9 +200,7 @@ public:
                     1,
                     ExtSma4H) <= 0)
         {
-         Print("[==================================================]");
-         Print(symbol,"  Error getting H4 SMA data. Error code = ", GetLastError());
-         Print("[==================================================]");
+         Print("[ ", symbol,"  Error getting H4 SMA data. Error code = ", GetLastError(), " ]");
          return;
         }
       ExtCurrentH4SMA = ExtSma4H[0];
@@ -224,10 +220,7 @@ public:
               {
                ExtSignalCreated = SIGNAL_SELL; // Sell signal created
                datetime expiryTime = TimeCurrent() + 3600;
-               Print("[=======================================================]");
-               Print(symbol,"  Sell signal created, expiry time: ", expiryTime);
-               Print("                  Last retracement: ", ExtLevelPrices[1]);
-               Print("[=======================================================]");
+               Print("[ ", symbol," Sell signal created, expiry time: ", expiryTime, " ]");
                ExtLastRetracement = ExtLevelPrices[1];
                ExtSellSignalCount++;
                ExtLastSignalTime = TimeCurrent();
@@ -246,10 +239,7 @@ public:
                  {
                   ExtSignalCreated = SIGNAL_BUY; // Buy signal created
                   datetime expiryTime = TimeCurrent() + 3600;
-                  Print("[======================================================]");
-                  Print(symbol,"  Buy signal created, expiry time: ", expiryTime);
-                  Print("                 Last retracement: ", ExtLevelPrices[1]);
-                  Print("[======================================================]");
+                  Print("[ ", symbol," Buy signal created, expiry time: ", expiryTime, " ]");
                   ExtLastRetracement = ExtLevelPrices[1];
                   ExtBuySignalCount++;
                   ExtLastSignalTime = TimeCurrent();
@@ -260,9 +250,7 @@ public:
         {
          if(ExtLast_tick.bid < ExtLastRetracement)
            {
-            Print("[==================]");
-            Print(symbol,"  Structure Broken");
-            Print("[==================]");
+            Print("[ ", symbol,"  Structure Broken ]");
             ExtSignalCreated = SIGNAL_NOT;
             ExtLastRetracement = 0;
             return;
@@ -278,9 +266,7 @@ public:
            {
             if(ExtLast_tick.ask > ExtLastRetracement)
               {
-               Print("[==================]");
-               Print(symbol,"  Structure Broken");
-               Print("[==================]");
+               Print("[ ", symbol," Structure Broken ]");
                ExtSignalCreated = SIGNAL_NOT;
                ExtLastRetracement = 0;
                return;
@@ -303,9 +289,7 @@ public:
          if(findMatchIdx(ExtLastRetracement,
                          ExtLevelPrices) == -1)
            {
-            Print("[==============]");
-            Print(symbol,"  Missed Entry");
-            Print("[==============]");
+            Print("[ ", symbol," Missed Entry ]");
             ExtSignalCreated = SIGNAL_NOT;
             ExtLastRetracement = 0;
             return;
@@ -354,18 +338,14 @@ public:
                     }
                   else
                     {
-                     Print("[=================================]");
-                     Print(symbol,"  Failed to open order resetting");
-                     Print("[=================================]");
+                     Print("[ ", symbol," Failed to open order resetting ]");
                      ExtSignalCreated = SIGNAL_NOT;
                      ExtLastRetracement = 0;
                     }
                  }
                else
                  {
-                  Print("[=====================================]");
-                  Print(symbol,"  Signal doesn't meet R:R requirement");
-                  Print("[=====================================]");
+                  Print("[ ", symbol," Signal doesn't meet R:R requirement ]");
                   ExtSignalCreated = SIGNAL_NOT;
                   ExtLastRetracement = 0;
                  }
@@ -377,10 +357,8 @@ public:
            {
             if(findMatchIdx(ExtLastRetracement,
                             ExtLevelPrices) == -1)
-              {
-               Print("[==============]");
-               Print(symbol,"  Missed Entry");
-               Print("[==============]");
+              { 
+               Print("[ ", symbol," Missed Entry ]");
                ExtSignalCreated = SIGNAL_NOT;
                ExtLastRetracement = 0;
                return;
@@ -420,7 +398,7 @@ public:
                        {
                         //double tp = lastTickPrice + tpPoints;
                         //double sl = lastTickPrice - slPoints;
-                        
+
                         orderStatus = openSellOrder(takeProfit,
                                                     stopLoss,
                                                     inpLotsize);
@@ -429,9 +407,7 @@ public:
                        }
                      else
                        {
-                        Print("[=================================]");
-                        Print(symbol,"  Failed to open order resetting");
-                        Print("[=================================]");
+                        Print("[ ", symbol," Failed to open order resetting ]");
                         ExtSignalCreated = SIGNAL_NOT;
                         ExtLastRetracement = 0;
                        }
@@ -439,9 +415,7 @@ public:
                  }
                else
                  {
-                  Print("[=====================================]");
-                  Print(symbol,"  Signal doesn't meet R:R requirement");
-                  Print("[=====================================]");
+                  Print("[ ", symbol," Signal doesn't meet R:R requirement ]");
                   ExtSignalCreated = SIGNAL_NOT;
                   ExtLastRetracement = 0;
                  }
@@ -490,25 +464,18 @@ public:
    bool              handlePortfolio(double riskPercent, double stopLossPoints)
      {
       double maxRisk = (riskPercent / 100.0) * ExtIniaccountBalance;
-      Print(riskPercent);
-      Print(ExtIniaccountBalance);
       double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
       double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
       double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
       double requiredMargin = 0;
       // 1 pip = 10 ticks
-      Print(inpcurrencyTicks);
       double pipValue = tickValue * inpcurrencyTicks;
       // Calculate the risk amount in currency
       double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
-      Print("[=======================]");
-      Print(symbol,"Risk Amount: ", riskAmount);
-      Print("[=======================]");
+      Print("[ ", symbol,"Risk Amount: ", riskAmount, " ]");
       if(riskAmount > maxRisk)
         {
-         Print("[======================================================================================]");
-         Print(symbol,"  Trade risk is too high. Risk amount: ", riskAmount, " exceeds max allowable risk per trade: ", maxRisk);
-         Print("[======================================================================================]");
+         Print("[ ", symbol,"  Trade risk is too high. Risk amount: ", riskAmount, " exceeds max allowable risk per trade: ", maxRisk, " ]");
          return false;
         }
       if(OrderCalcMargin(ORDER_TYPE_BUY,
@@ -519,17 +486,13 @@ public:
         {
          if(requiredMargin > freeMargin)
            {
-            Print("[===============================================================================]");
-            Print(symbol,"  Not enough margin to open the position. Required margin: ", requiredMargin, " Free margin: ", freeMargin);
-            Print("[===============================================================================]");
+            Print("[ ", symbol,"  Not enough margin to open the position. Required margin: ", requiredMargin, " Free margin: ", freeMargin, " ]");
             return false;
            }
         }
       else
         {
-         Print("[===========================]");
-         Print(symbol,"  Error calculating margin.");
-         Print("[===========================]");
+         Print("[ ", symbol,"  ERROR CALCULATING MARGIN ]");
          return false;
         }
       return true;
@@ -594,9 +557,7 @@ public:
         }
       else
         {
-         Print("[========================================]");
-         Print(symbol,"  Failed to open Sell order. Error code: ", EXTrade.ResultRetcode());
-         Print("[========================================]");
+         Print("[ ", symbol,"  FAILED TO OPEN BUY ORDER. ERROR CODE: ", EXTrade.ResultRetcode(), " ]");
          return 0;
         }
       return 1;
@@ -619,9 +580,7 @@ public:
         }
       else
         {
-         Print("[========================================]");
-         Print(symbol,"  Failed to open Sell order. Error code: ", EXTrade.ResultRetcode());
-         Print("[========================================]");
+         Print("[ ", symbol,"  FAILED TO OPEN SELL ORDER. ERROR CODE: ", EXTrade.ResultRetcode(), " ]");
          return 0;
         }
       return 1;
@@ -638,17 +597,15 @@ public:
 
    // Additional methods for trade management, etc.
   };
+  
 // Global variables for managing multiple symbols
 CSymbolTrader *traders[]; // Array to hold symbol traders
-
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 void OnInit()
   {
-   Print("[=============================]");
-   Print("  Initializing EXmachina");
-   Print("[=============================]");
+   Print("[ INITIALIZING EXmachina ]");
 
 // Calculate initial account balance and drawdown once globally
    double ExtIniaccountBalance = AccountInfoDouble(ACCOUNT_BALANCE); // Get initial account balance
@@ -687,9 +644,6 @@ void OnTimer()
   {
    if(checkDrawDown() == true)
      {
-      Print("[===============================================]");
-      Print("  Min draw down amount exceeded, deinitializing");
-      Print("[===============================================]");
       OnDeinit(-7);
      }
 
@@ -715,9 +669,7 @@ void OnDeinit(const int reason)
      }
    if(reason == -7)
      {
-      Print("[==============================================================]");
-      Print("  Deinitializing because balance has exceeded draw down amount");
-      Print("[=============================================================]");
+      Print("[ MINIMUM DRAWDOWN AMOUNT EXCEEDED, DEINITIALIZING... ]");
      }
    EventKillTimer();
   }
