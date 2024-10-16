@@ -162,9 +162,7 @@ public:
             ExtCurrFibLevels[6] = price2;                                   // 0%
            }
      }
-   //+------------------------------------------------------------------+
-   //| Expert tick function                                             |
-   //+------------------------------------------------------------------+
+   // Method to process tick data
    void              processTick()
      {
       // Check if it's the right trading session
@@ -274,9 +272,7 @@ public:
               }
            }
      }
-   //+------------------------------------------------------------------+
-   //  Expert Function to monitor price and open a position             |
-   //+------------------------------------------------------------------+
+   //  Method to monitor price and open a position
    void              MonitorPriceAndOpenPosition(double lastTickPrice,
          bool isBullish)
      {
@@ -418,9 +414,7 @@ public:
               }
            }
      }
-   //+------------------------------------------------------------------+
-   //|   Expert Function to calculate Stop Loss and Take Profit         |
-   //+------------------------------------------------------------------+
+   //  Method to calculate Stop Loss and Take Profit
    double            calculateExit(double price2,
                                    double price1,
                                    double entryPrice,
@@ -438,9 +432,7 @@ public:
             sl = entryPrice + slPoints;
       return sl;
      }
-   //+------------------------------------------------------------------+
-   //|  Expert Function to find the index of a value in an array        |
-   //+------------------------------------------------------------------+
+   //  Method to find the index of a value in an array                 
    int               findMatchIdx(double value,
                                   double &array[])
      {
@@ -453,10 +445,7 @@ public:
         }
       return -1;
      }
-
-   //+------------------------------------------------------------------+
-   //|  Expert Function  to handle portfolio/risk                       |
-   //+------------------------------------------------------------------+
+   //  Method to handle portfolio/risk
    bool              handlePortfolio(double riskPercent, double stopLossPoints)
      {
       double maxRisk = (riskPercent / 100.0) * ExtIniaccountBalance;
@@ -493,9 +482,7 @@ public:
         }
       return true;
      }
-   //+------------------------------------------------------------------+
-   //| Expert Function to check the current trading session             |
-   //+------------------------------------------------------------------+
+   // Method to check the current trading session
    bool              IsTradingSession(int type)
      {
       datetime currentTime = TimeCurrent();
@@ -542,9 +529,7 @@ public:
                  }
       return false;
      }
-   //+------------------------------------------------------------------+
-   //| Expert Function to open buy order                                |
-   //+------------------------------------------------------------------+
+   // Method to open buy order                                         
    int               openBuyOrder(double takeProfit, double stopLoss, double lotSize)
      {
       // Open the buy trade
@@ -561,9 +546,7 @@ public:
         }
       return 1;
      }
-   //+------------------------------------------------------------------+
-   //| Expert Function to open sell order                               |
-   //+------------------------------------------------------------------+
+   // Method to open sell order                                        
    int               openSellOrder(double takeProfit, double stopLoss, double lotSize)
      {
       // Open the sell trade
