@@ -10,18 +10,20 @@
 
 #include <Trade\Trade.mqh>
 
-#define SIGNAL_BUY    1             // Buy signal
-#define SIGNAL_NOT    0             // No trading signal
-#define SIGNAL_SELL  -1             // Sell signal
+#define SIGNAL_BUY    1 // Buy signal
+#define SIGNAL_NOT    0 // No trading signal
+#define SIGNAL_SELL  -1 // Sell signal
 
-double ExtDrawDownAmount = 0;                                // Drawdown amount based on percentage
-input int      inpDrawDownPercent = 30;                      // Default drawdown percentage
-input int inppercentageRisk = 3;                             // Percentage risk per trade
-input string symbolsToTrade = "XAUUSD,GBPUSD,USDJPY,AUDUSD"; // Comma-separated list of symbols
-input string tick = "10,1,1,1";                              // Corresponding tick sizes for each symbol
-input double inplotSize = 0.02;                              // Lot size
-int ExtBuySignalCount = 0;                                   // Buy signal count
-int ExtSellSignalCount = 0;;                                 // Sell signal count
+input int inpzigzagDepth = 12; // zig zag depth
+input int inpzigzagDeviation = 7; // zig zag deviation
+input int inpzigzagBackstep = 5; // zig zag backstep
+input int inpSMA_Period = 14; // Period for SMA
+
+int ExtBuySignalCount = 0;   // Buy signal count
+int ExtSellSignalCount = 0;  // Sell signal count
+int drawDownPercent = 30;    // Default drawdown percentage
+int percentageRisk = 3;   // Percentage risk per trade
+double ExtDrawDownAmount = 0;
 
 //+------------------------------------------------------------------+
 //| Expert Trader class                                              |
@@ -48,48 +50,39 @@ private:
    datetime          ExtLastSignalTime;    // Last signal time
    datetime          ExtLevelTimes[5];     // Level times array
    ENUM_TIMEFRAMES   period;               // Timeframe for analysis
+   long              currencyTicks;       // Currency ticks
 
-   // Input parameters
-   double            inpLotsize;             // Lotsize
-   int               inpSMA_Period;          // Period for SMA
-   long              inpcurrencyTicks;       // Currency ticks
-   int               inpPercentageRisk;      // Risk percentage
 
 public:
-   // Constructor that accepts the symbol as a parameter
-                     CSymbolTrader(string pair, long ticks, double lotsize, int percentageRisk)
+   // Constructor
+                     CSymbolTrader(string pair, long ticks)
      {
       symbol = pair;
-      inpcurrencyTicks = ticks;                // Store the symbol to trade
+      currencyTicks = ticks;
       ExtSignalCreated = SIGNAL_NOT;
       ExtCopiedData = 0;
       ExtCountLevels = 0;
       ExtLastRetracement = 0;
       ExtCurrentH4SMA = 0;
-      ExtIniaccountBalance = 0;
-      ExtDrawDownAmount = 0;
       ExtLastSignalTime = 0;
-      period = _Period;                       // Set default timeframe
-
-      inpLotsize = lotsize;                   // Default lot size
-      inpSMA_Period = 14;                     // Default SMA period
-      inpPercentageRisk = percentageRisk;     // Default risk percentage
+      ExtIniaccountBalance = 0;
+      period = _Period; // Set timeframe
      }
 
    // Setter for initial account balance
    void              SetInitialAccountBalance(double balance)
      {
-      ExtIniaccountBalance = balance; // Assuming ExtIniaccountBalance is a class member
+      ExtIniaccountBalance = balance;
      }
 
 
    // Method to identify support and resistance levels using ZigZag
    void              IdentifyLevels()
      {
-      // Subtract 2 days in seconds from the current time
-      datetime fromTime = TimeCurrent() - 2 * 24 * 60 * 60;
-      datetime toTime = TimeCurrent(); // Current local time
+      datetime fromTime = TimeCurrent() - 1 * 4 * 60 * 60;
+      datetime toTime = TimeCurrent();
 
+      ArrayFree(ExtChartData); // Free chart data array
       // Retrieve data for the specific symbol
       ExtCopiedData = CopyRates(symbol, period, fromTime, toTime, ExtChartData);
       if(ExtCopiedData <= 0)
@@ -100,17 +93,14 @@ public:
       ArraySetAsSeries(ExtChartData, true);
 
       // Create ZigZag indicator handle for the specific symbol
-      int zigzagDepth = 12;
-      int zigzagDeviation = 7;
-      int zigzagBackstep = 5;
-      ExtZigzagHandle = iCustom(symbol, 0, "Examples/ZigZag", zigzagDepth, zigzagDeviation, zigzagBackstep);
-
+      ExtZigzagHandle = iCustom(symbol, 0, "Examples/ZigZag", inpzigzagDepth, inpzigzagDeviation, inpzigzagBackstep);
       if(ExtZigzagHandle == INVALID_HANDLE)
         {
          //Print("[ Failed to apply ZigZag on symbol: ", symbol, " ]");
          return;
         }
 
+      ArrayFree(ExtZigzagData); // Free zig zag data array
       // Retrieve ZigZag data for the specific symbol
       int copiedZigzagData = CopyBuffer(ExtZigzagHandle, 0, 0, ExtCopiedData, ExtZigzagData);
       if(copiedZigzagData <= 0)
@@ -164,7 +154,7 @@ public:
    void              processTick()
      {
       // Check if it's the right trading session
-      if(!IsTradingSession(1))
+      if(!IsTradingSession(24))
          return;
       // Check if 1hr have passed since the last signal
       //if((TimeCurrent() - ExtLastSignalTime) > 3600)
@@ -305,33 +295,59 @@ public:
                int orderStatus = 0;
                if(RR >= 3)
                  {
-                  if(handlePortfolio(inpPercentageRisk,
-                                     slPoints) == false)
+                  double lotsizeMul = AccountInfoDouble(ACCOUNT_BALANCE) / 100;
+                  double iniLotSize = lotsizeMul * 0.01;
+                  double lotsize = 0;
+
+                  if(iniLotSize <= 0.01)
                     {
-                     ExtSignalCreated = SIGNAL_NOT;
-                     ExtLastRetracement = 0;
-                     return;
+                     lotsize = 0.01;
+
+                     if(handlePortfolio(percentageRisk,
+                                        slPoints,
+                                        lotsize) == false)
+                       {
+                        ExtSignalCreated = SIGNAL_NOT;
+                        ExtLastRetracement = 0;
+                        return;
+                       }
                     }
+                  else
+                     if(iniLotSize > 0.01)
+                       {
+                        lotsize = (float)(int)(iniLotSize / 2 * 100) / 100.0;
+
+                        if(handlePortfolio(percentageRisk,
+                                           slPoints,
+                                           iniLotSize) == false)
+                          {
+                           ExtSignalCreated = SIGNAL_NOT;
+                           ExtLastRetracement = 0;
+                           return;
+                          }
+                       }
+
                   orderStatus = openBuyOrder(tp,
                                              stopLoss,
-                                             inpLotsize);
+                                             lotsize);
                   if(orderStatus == 1)
                     {
                      // double tp = lastTickPrice - tpPoints;
                      // double sl = lastTickPrice + slPoints;
-
-                     orderStatus = openBuyOrder(takeProfit,
-                                                stopLoss,
-                                                inpLotsize);
+                     if(iniLotSize > 0.01)
+                        orderStatus = openBuyOrder(takeProfit,
+                                                   stopLoss,
+                                                   lotsize);
                      ExtSignalCreated = SIGNAL_NOT;
                      ExtLastRetracement = 0;
                     }
                   else
-                    {
-                     Print("[ ", symbol," Failed to open order resetting ]");
-                     ExtSignalCreated = SIGNAL_NOT;
-                     ExtLastRetracement = 0;
-                    }
+                     if(orderStatus != 1)
+                       {
+                        Print("[ ", symbol," Failed to open order resetting ]");
+                        ExtSignalCreated = SIGNAL_NOT;
+                        ExtLastRetracement = 0;
+                       }
                  }
                else
                  {
@@ -374,24 +390,49 @@ public:
                   int orderStatus = 0;
                   if(RR >= 3)
                     {
-                     if(handlePortfolio(inpPercentageRisk,
-                                        slPoints) == false)
+                     double lotsizeMul = AccountInfoDouble(ACCOUNT_BALANCE) / 100;
+                     double iniLotSize = lotsizeMul * 0.01;
+                     double lotsize = 0;
+
+                     if(iniLotSize <= 0.01)
                        {
-                        ExtSignalCreated = SIGNAL_NOT;
-                        ExtLastRetracement = 0;
-                        return;
+                        lotsize = 0.01;
+
+                        if(handlePortfolio(percentageRisk,
+                                           slPoints,
+                                           lotsize) == false)
+                          {
+                           ExtSignalCreated = SIGNAL_NOT;
+                           ExtLastRetracement = 0;
+                           return;
+                          }
                        }
+                     else
+                        if(iniLotSize > 0.01)
+                          {
+                           lotsize = (float)(int)(iniLotSize / 2 * 100) / 100.0;
+
+                           if(handlePortfolio(percentageRisk,
+                                              slPoints,
+                                              iniLotSize) == false)
+                             {
+                              ExtSignalCreated = SIGNAL_NOT;
+                              ExtLastRetracement = 0;
+                              return;
+                             }
+                          }
+
                      orderStatus = openSellOrder(tp,
                                                  stopLoss,
-                                                 inpLotsize);
+                                                 lotsize);
                      if(orderStatus == 1)
                        {
                         //double tp = lastTickPrice + tpPoints;
                         //double sl = lastTickPrice - slPoints;
-
-                        orderStatus = openSellOrder(takeProfit,
-                                                    stopLoss,
-                                                    inpLotsize);
+                        if(iniLotSize > 0.01)
+                           orderStatus = openSellOrder(takeProfit,
+                                                       stopLoss,
+                                                       lotsize);
                         ExtSignalCreated = SIGNAL_NOT;
                         ExtLastRetracement = 0;
                        }
@@ -444,15 +485,15 @@ public:
       return -1;
      }
    //  Method to handle portfolio/risk
-   bool              handlePortfolio(double riskPercent, double stopLossPoints)
+   bool              handlePortfolio(double riskPercent, double stopLossPoints, double lotsize)
      {
       double maxRisk = (riskPercent / 100.0) * ExtIniaccountBalance;
       double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
       double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
       double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
       double requiredMargin = 0;
-      double pipValue = tickValue * inpcurrencyTicks;
-      double riskAmount = (pipValue / tickSize) * stopLossPoints * (inpLotsize * 2);
+      double pipValue = tickValue * currencyTicks;
+      double riskAmount = (pipValue / tickSize) * stopLossPoints * (lotsize);
       Print("[ ", symbol,"Risk Amount: ", riskAmount, " ]");
       if(riskAmount > maxRisk)
         {
@@ -461,7 +502,7 @@ public:
         }
       if(OrderCalcMargin(ORDER_TYPE_BUY,
                          symbol,
-                         (inpLotsize * 2),
+                         (lotsize),
                          SymbolInfoDouble(symbol, SYMBOL_BID),
                          requiredMargin))
         {
@@ -479,48 +520,83 @@ public:
       return true;
      }
    // Method to check the current trading session
-   bool              IsTradingSession(int type)
+   bool              IsTradingSession(int sessionMask)
      {
+      // Get the current time
       datetime currentTime = TimeCurrent();
       MqlDateTime timeStruct;
       TimeToStruct(currentTime, timeStruct);
+
       int hour = timeStruct.hour;
       int minute = timeStruct.min;
-      bool isAsianSession = (hour >= 2 && hour < 9);                        // Asian session: 00:00 AM - 09:00 AM. 2 hr after asian session begins.
-      bool isLondonSession = (hour > 8 || (hour == 8 && minute >= 0))
-                             && (hour < 17 || (hour == 17 && minute == 0)); // London session: 8:00 AM - 5:00 PM
-      bool isNYSession = (hour > 13 || (hour == 13 && minute >= 0))
-                         && (hour < 22 || (hour == 22 && minute == 0));     // New York session: 1:00 PM - 10:00 PM
-      bool isLateNySession = (hour > 21 || (hour == 21 && minute >= 0))
-                             && (hour < 23 || (hour == 23 && minute == 40));
-      // Trading is allowed only during specified session(s)
-      if(type == 1)
+
+      // Restrict trading between 1 hour before midnight and 2 hours after
+      if(hour < 2)
         {
-         if(isNYSession
-            || isAsianSession
-            || isLateNySession
-            || isLondonSession)
-            return true;
+         return false;
         }
-      else
-         if(type == 2)
-           {
-            if(isLondonSession)
-               return true;
-           }
-         else
-            if(type == 3)
-              {
-               if(isNYSession || isLateNySession)
-                  return true;
-              }
-            else
-               if(type == 4)
-                 {
-                  if(isAsianSession)
-                     return true;
-                 }
-      return false;
+
+      // Define session time ranges
+      bool isAsianSession  = (hour >= 0 && hour < 9);
+      bool isLondonSession = (hour >= 8 && hour < 17);
+      bool isNYSession     = (hour >= 13 && hour < 22);
+      bool isLateNySession = (hour >= 21 && hour < 23);
+      bool isSydneySession = (hour >= 22 || hour < 7);
+
+      // Check the session combinations based on sessionMask
+      switch(sessionMask)
+        {
+         case 1:  // Only Asian Session
+            return isAsianSession;
+         case 2:  // Only London Session
+            return isLondonSession;
+         case 3:  // Asian + London Sessions
+            return isAsianSession || isLondonSession;
+         case 4:  // Only NY Session
+            return isNYSession;
+         case 5:  // Asian + NY Sessions
+            return isAsianSession || isNYSession;
+         case 6:  // London + NY Sessions
+            return isLondonSession || isNYSession;
+         case 7:  // Asian + London + NY Sessions
+            return isAsianSession || isLondonSession || isNYSession;
+         case 8:  // Only Late NY Session
+            return isLateNySession;
+         case 9:  // Asian + Late NY Sessions
+            return isAsianSession || isLateNySession;
+         case 10: // London + Late NY Sessions
+            return isLondonSession || isLateNySession;
+         case 11: // Asian + London + Late NY Sessions
+            return isAsianSession || isLondonSession || isLateNySession;
+         case 12: // NY + Late NY Sessions
+            return isNYSession || isLateNySession;
+         case 13: // Asian + NY + Late NY Sessions
+            return isAsianSession || isNYSession || isLateNySession;
+         case 14: // London + NY + Late NY Sessions
+            return isLondonSession || isNYSession || isLateNySession;
+         case 15: // Asian + London + NY + Late NY Sessions
+            return isAsianSession || isLondonSession || isNYSession || isLateNySession;
+         case 16: // Only Sydney Session
+            return isSydneySession;
+         case 17: // Asian + Sydney Sessions
+            return isAsianSession || isSydneySession;
+         case 18: // London + Sydney Sessions
+            return isLondonSession || isSydneySession;
+         case 19: // NY + Sydney Sessions
+            return isNYSession || isSydneySession;
+         case 20: // Late NY + Sydney Sessions
+            return isLateNySession || isSydneySession;
+         case 21: // Asian + London + Sydney Sessions
+            return isAsianSession || isLondonSession || isSydneySession;
+         case 22: // Asian + NY + Sydney Sessions
+            return isAsianSession || isNYSession || isSydneySession;
+         case 23: // London + NY + Sydney Sessions
+            return isLondonSession || isNYSession || isSydneySession;
+         case 24: // All sessions including Sydney
+            return isAsianSession || isLondonSession || isNYSession || isLateNySession || isSydneySession;
+         default:  // Invalid sessionMask
+            return false;
+        }
      }
    // Method to open buy order
    int               openBuyOrder(double takeProfit, double stopLoss, double lotSize)
@@ -565,8 +641,6 @@ public:
          return ExtLevelPrices[index];
       return 0.0;  // Return a default value if index is out of range
      }
-
-   // Additional methods for trade management, etc.
   };
 
 // Global variables for managing multiple symbols
@@ -577,11 +651,11 @@ CSymbolTrader *traders[]; // Array to hold symbol traders
 void OnInit()
   {
    Print("[ INITIALIZING EXmachina ]");
-
    double ExtIniaccountBalance = AccountInfoDouble(ACCOUNT_BALANCE); // Get initial account balance
-   Print(ExtIniaccountBalance);
-   ExtDrawDownAmount = (inpDrawDownPercent / 100.0) * ExtIniaccountBalance; // Calculate drawdown once globally
+   ExtDrawDownAmount = (drawDownPercent / 100.0) * ExtIniaccountBalance; // Calculate drawdown once globally
 
+   string symbolsToTrade = "XAUUSD,GBPUSD,USDJPY,AUDUSD,EURCAD"; // Comma-separated list of symbols
+   string tick = "10,1,1,1,1"; // Corresponding tick sizes for each symbol
 // Parse symbols from the input string
    string symbolsArray[];
    StringSplit(symbolsToTrade, ',', symbolsArray); // Split input string by comma
@@ -592,7 +666,7 @@ void OnInit()
    ArrayResize(traders, ArraySize(symbolsArray)); // Resize the traders array
    for(int i = 0; i < ArraySize(symbolsArray); i++)
      {
-      traders[i] = new CSymbolTrader(symbolsArray[i], StringToInteger(tickArray[i]), inplotSize, inppercentageRisk);
+      traders[i] = new CSymbolTrader(symbolsArray[i], StringToInteger(tickArray[i]));
       traders[i].SetInitialAccountBalance(ExtIniaccountBalance);
 
       // Identify levels and calculate Fibonacci for each symbol
